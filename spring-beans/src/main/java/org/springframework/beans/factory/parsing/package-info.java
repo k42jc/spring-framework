@@ -1,4 +1,5 @@
 /**
+ * 本包负责将配置转换为bean定义
  * Support infrastructure for bean definition parsing.
  */
 @NonNullApi
