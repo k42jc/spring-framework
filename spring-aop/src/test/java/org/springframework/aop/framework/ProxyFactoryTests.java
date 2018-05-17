@@ -16,17 +16,10 @@
 
 package org.springframework.aop.framework;
 
-import java.util.ArrayList;
-import java.util.List;
-import javax.accessibility.Accessible;
-import javax.swing.JFrame;
-import javax.swing.RootPaneContainer;
-
 import org.aopalliance.intercept.MethodInterceptor;
 import org.aopalliance.intercept.MethodInvocation;
 import org.junit.Ignore;
 import org.junit.Test;
-
 import org.springframework.aop.Advisor;
 import org.springframework.aop.interceptor.DebugInterceptor;
 import org.springframework.aop.support.AopUtils;
@@ -42,7 +35,12 @@ import org.springframework.tests.sample.beans.IOther;
 import org.springframework.tests.sample.beans.ITestBean;
 import org.springframework.tests.sample.beans.TestBean;
 
-import static org.hamcrest.CoreMatchers.*;
+import javax.accessibility.Accessible;
+import javax.swing.*;
+import java.util.ArrayList;
+import java.util.List;
+
+import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.junit.Assert.*;
 
 /**
@@ -55,8 +53,10 @@ import static org.junit.Assert.*;
  */
 public class ProxyFactoryTests {
 
-	@Test
-	public void testIndexOfMethods() {
+//	@Test
+//	public void testIndexOfMethods() {
+public static void main(String[] args) {
+	System.setProperty("sun.misc.ProxyGenerator.saveGeneratedFiles", "true");
 		TestBean target = new TestBean();
 		ProxyFactory pf = new ProxyFactory(target);
 		NopInterceptor nop = new NopInterceptor();

@@ -519,9 +519,18 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 			prepareRefresh();
 
 			// Tell the subclass to refresh the internal bean factory.
+			// 创建beanFactory容器
+			/**
+			 * 内部封装代码等价于：
+			 * 		DefaultListableBeanFactory beanFactory = new DefaultListableBeanFactory();
+			 * 	 	XmlBeanDefinitionReader beanDefinitionReader = new XmlBeanDefinitionReader(beanFactory);
+			 * 	 	beanDefinitionReader.loadBeanDefinitions(resource);
+			 * 经过此步骤后，beanFactory已经是一个读取了bean配置后的初步可用的IOC容器
+			 */
 			ConfigurableListableBeanFactory beanFactory = obtainFreshBeanFactory();
 
 			// Prepare the bean factory for use in this context.
+			// 为beanFactory配置classLoader以及后置事件处理器等操作
 			prepareBeanFactory(beanFactory);
 
 			try {
@@ -547,6 +556,11 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 				registerListeners();
 
 				// Instantiate all remaining (non-lazy-init) singletons.
+				// 完成非延迟加载bean的初始化
+				/**
+				 * 等同于上面代码初始化IOC容器之后调用：
+				 * 		(DefaultListableBeanFactory)beanFactory.preInstantiateSingletons()
+				 */
 				finishBeanFactoryInitialization(beanFactory);
 
 				// Last step: publish corresponding event.
@@ -638,6 +652,7 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 		beanFactory.addPropertyEditorRegistrar(new ResourceEditorRegistrar(this, getEnvironment()));
 
 		// Configure the bean factory with context callbacks.
+		// 注册bean初始化的后置处理器，ApplicationContextAwareProcessor用于初始化系统扩展ApplicationContextAware用于获取bean上下文的初始化
 		beanFactory.addBeanPostProcessor(new ApplicationContextAwareProcessor(this));
 		beanFactory.ignoreDependencyInterface(EnvironmentAware.class);
 		beanFactory.ignoreDependencyInterface(EmbeddedValueResolverAware.class);
@@ -664,6 +679,7 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 		}
 
 		// Register default environment beans.
+		// 注册Environment，beanName=environment
 		if (!beanFactory.containsLocalBean(ENVIRONMENT_BEAN_NAME)) {
 			beanFactory.registerSingleton(ENVIRONMENT_BEAN_NAME, getEnvironment());
 		}
@@ -866,6 +882,7 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 		beanFactory.freezeConfiguration();
 
 		// Instantiate all remaining (non-lazy-init) singletons.
+		// 实例化所有非延迟加载的bean
 		beanFactory.preInstantiateSingletons();
 	}
 

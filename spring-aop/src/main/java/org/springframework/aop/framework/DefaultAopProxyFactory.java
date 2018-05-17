@@ -16,12 +16,17 @@
 
 package org.springframework.aop.framework;
 
+import org.springframework.aop.SpringProxy;
+
 import java.io.Serializable;
 import java.lang.reflect.Proxy;
 
-import org.springframework.aop.SpringProxy;
-
 /**
+ * AopProxy代理工厂，默认使用JDK动态代理
+ *
+ * 若目标bean是接口支持类使用JDK动态代理
+ * 否则使用CGLIB
+ *
  * Default {@link AopProxyFactory} implementation, creating either a CGLIB proxy
  * or a JDK dynamic proxy.
  *

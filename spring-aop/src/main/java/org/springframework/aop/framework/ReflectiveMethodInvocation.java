@@ -16,21 +16,20 @@
 
 package org.springframework.aop.framework;
 
+import org.aopalliance.intercept.MethodInterceptor;
+import org.aopalliance.intercept.MethodInvocation;
+import org.springframework.aop.ProxyMethodInvocation;
+import org.springframework.aop.support.AopUtils;
+import org.springframework.core.BridgeMethodResolver;
+import org.springframework.lang.Nullable;
+
 import java.lang.reflect.AccessibleObject;
 import java.lang.reflect.Method;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.aopalliance.intercept.MethodInterceptor;
-import org.aopalliance.intercept.MethodInvocation;
-
-import org.springframework.aop.ProxyMethodInvocation;
-import org.springframework.aop.support.AopUtils;
-import org.springframework.core.BridgeMethodResolver;
-import org.springframework.lang.Nullable;
-
-/**
+/**AOP切面拦截递归调用处理，拦截器链
  * Spring's implementation of the AOP Alliance
  * {@link org.aopalliance.intercept.MethodInvocation} interface,
  * implementing the extended
@@ -154,7 +153,13 @@ public class ReflectiveMethodInvocation implements ProxyMethodInvocation, Clonea
 		this.arguments = arguments;
 	}
 
-
+	/**
+	 * 如果有多个MethodInterceptor则按顺序递归调用每个拦截器的invoke方法
+	 * 调用完成则调用invokeJoinpoint执行目标bean的被拦截的目标方法
+	 *
+	 * @return
+	 * @throws Throwable
+	 */
 	@Override
 	@Nullable
 	public Object proceed() throws Throwable {
@@ -186,7 +191,7 @@ public class ReflectiveMethodInvocation implements ProxyMethodInvocation, Clonea
 		}
 	}
 
-	/**
+	/**反射调用代理目标(切入点)方法
 	 * Invoke the joinpoint using reflection.
 	 * Subclasses can override this to use custom invocation.
 	 * @return the return value of the joinpoint

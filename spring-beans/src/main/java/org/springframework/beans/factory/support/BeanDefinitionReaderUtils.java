@@ -136,6 +136,7 @@ public class BeanDefinitionReaderUtils {
 	}
 
 	/**
+	 * 注册bean到map映射缓存
 	 * Register the given bean definition with the given bean factory.
 	 * @param definitionHolder the bean definition including name and aliases
 	 * @param registry the bean factory to register with
