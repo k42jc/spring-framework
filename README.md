@@ -1,5 +1,45 @@
 # <img src="src/docs/asciidoc/images/spring-framework.png" width="80" height="80"> Spring Framework
 
+
+鉴于开始准备看spring源码时，出现下载了代码但对gradle不熟悉导致导入IDEA后无法通过编译的情况
+
+特意增加**一点调试备注**
+
+
+下面步骤的源文档：[Build from Source](https://github.com/spring-projects/spring-framework/wiki/Build-from-Source) 以及 [import-into-idea.md.](https://github.com/spring-projects/spring-framework/blob/master/import-into-idea.md)
+
+源代码clone到本地后
+
+编译
+
+    cd spring-framework
+    ./gradlew build
+    #等待执行完成，如果网速不好会非常痛苦，因为要下载gradle还要下载很多jar
+
+导入IDEA
+
+    Within your locally cloned spring-framework working directory:
+    
+    * 使用 ./gradlew :spring-oxm:compileTestJava 命令预编译spring-oxm
+    * 打开IDEA (File -> New -> Project from Existing Sources -> 进入指定目录 -> 选择 build.gradle 确定导入)
+    * 基本上等导入完成就可以了
+    
+源码调试简单指引：
+
+    到每个模块下的test目录，有非常健全的单元测试类
+
+### Spring-beans(也就核心的IOC)
+    
+1. 从BeanFactoryUtilsTests开始调试一步步看，了解简单IOC容器
+2. 看完再把ClassPathXmlApplicationContextTests大致看一下，了解上下文以及各种事件注册机制
+3. 再稍微看看注解加载模式
+
+### Spring-aop
+
+1. 把ProxyFactoryTests稍微看一下，编程式AOP
+2. 详细看一遍ProxyFactoryBeanTests，声明式AOP，IOC容器加载与FactoryBean结合的实现   
+
+
 This is the home of the Spring Framework, the foundation for all
 [Spring projects](https://spring.io/projects). Together the Spring Framework and the family of Spring projects make up what we call "Spring". 
 
