@@ -63,6 +63,7 @@ public class DefaultNamespaceHandlerResolver implements NamespaceHandlerResolver
 	private final ClassLoader classLoader;
 
 	/** Resource location to search for */
+	/** 使用SPI加载的方式，默认是定义在META-INF/spring.handlers路径下进行自定义标签的扩展实现*/
 	private final String handlerMappingsLocation;
 
 	/** Stores the mappings from namespace URI to NamespaceHandler class name / instance */
@@ -107,6 +108,9 @@ public class DefaultNamespaceHandlerResolver implements NamespaceHandlerResolver
 
 
 	/**
+	 * 读取所有定义的spi扩展点去加载自定义标签解析器扩展
+	 * 然后通过反射初始化后调用初始化方法初始化标签/bean关系映射
+	 * 达到自定义标签定义bean的功能
 	 * Locate the {@link NamespaceHandler} for the supplied namespace URI
 	 * from the configured mappings.
 	 * @param namespaceUri the relevant namespace URI
@@ -115,6 +119,7 @@ public class DefaultNamespaceHandlerResolver implements NamespaceHandlerResolver
 	@Override
 	@Nullable
 	public NamespaceHandler resolve(String namespaceUri) {
+		// 获取到所有classpath下(所有jar包下)的META-INF/spring.handlers配置的NamespaceHandler扩展
 		Map<String, Object> handlerMappings = getHandlerMappings();
 		Object handlerOrClassName = handlerMappings.get(namespaceUri);
 		if (handlerOrClassName == null) {
@@ -126,12 +131,15 @@ public class DefaultNamespaceHandlerResolver implements NamespaceHandlerResolver
 		else {
 			String className = (String) handlerOrClassName;
 			try {
+				// 通过反射初始化扩展点
 				Class<?> handlerClass = ClassUtils.forName(className, this.classLoader);
 				if (!NamespaceHandler.class.isAssignableFrom(handlerClass)) {
 					throw new FatalBeanException("Class [" + className + "] for namespace [" + namespaceUri +
 							"] does not implement the [" + NamespaceHandler.class.getName() + "] interface");
 				}
 				NamespaceHandler namespaceHandler = (NamespaceHandler) BeanUtils.instantiateClass(handlerClass);
+				// 调用扩展点的init方法加载自定义标签与对应bean
+				// 通过NamespaceHandlerSupport.registerBeanDefinitionParser将扩展的标签与对应bean添加到容器解析映射集
 				namespaceHandler.init();
 				handlerMappings.put(namespaceUri, namespaceHandler);
 				return namespaceHandler;

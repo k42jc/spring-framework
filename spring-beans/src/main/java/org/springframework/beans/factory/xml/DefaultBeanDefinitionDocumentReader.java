@@ -176,7 +176,7 @@ public class DefaultBeanDefinitionDocumentReader implements BeanDefinitionDocume
 					if (delegate.isDefaultNamespace(ele)) {
 						parseDefaultElement(ele, delegate);
 					}
-					else {
+					else {// 这里有一个用于加载自定义标签的扩展，dubbo的自定义标签就是通过这种机制扩展的
 						delegate.parseCustomElement(ele);
 					}
 				}
