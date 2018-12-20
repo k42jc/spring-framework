@@ -30,7 +30,6 @@ import io.undertow.connector.ByteBufferPool;
 import io.undertow.connector.PooledByteBuffer;
 import io.undertow.server.HttpServerExchange;
 import io.undertow.server.handlers.Cookie;
-import io.undertow.util.HeaderValues;
 import org.xnio.channels.StreamSourceChannel;
 import reactor.core.publisher.Flux;
 
@@ -44,6 +43,7 @@ import org.springframework.lang.Nullable;
 import org.springframework.util.Assert;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
+import org.springframework.util.ObjectUtils;
 import org.springframework.util.StringUtils;
 
 /**
@@ -78,11 +78,9 @@ class UndertowServerHttpRequest extends AbstractServerHttpRequest {
 	}
 
 	private static HttpHeaders initHeaders(HttpServerExchange exchange) {
-		HttpHeaders headers = new HttpHeaders();
-		for (HeaderValues values : exchange.getRequestHeaders()) {
-			headers.put(values.getHeaderName().toString(), values);
-		}
-		return headers;
+		UndertowHeadersAdapter headersMap =
+				new UndertowHeadersAdapter(exchange.getRequestHeaders());
+		return new HttpHeaders(headersMap);
 	}
 
 	@Override
@@ -127,8 +125,13 @@ class UndertowServerHttpRequest extends AbstractServerHttpRequest {
 		return (T) this.exchange;
 	}
 
+	@Override
+	protected String initId() {
+		return ObjectUtils.getIdentityHexString(this.exchange.getConnection());
+	}
 
-	private static class RequestBodyPublisher extends AbstractListenerReadPublisher<DataBuffer> {
+
+	private class RequestBodyPublisher extends AbstractListenerReadPublisher<DataBuffer> {
 
 		private final StreamSourceChannel channel;
 
@@ -136,7 +139,9 @@ class UndertowServerHttpRequest extends AbstractServerHttpRequest {
 
 		private final ByteBufferPool byteBufferPool;
 
+
 		public RequestBodyPublisher(HttpServerExchange exchange, DataBufferFactory bufferFactory) {
+			super(UndertowServerHttpRequest.this.getLogPrefix());
 			this.channel = exchange.getRequestChannel();
 			this.bufferFactory = bufferFactory;
 			this.byteBufferPool = exchange.getConnection().getByteBufferPool();
@@ -171,10 +176,10 @@ class UndertowServerHttpRequest extends AbstractServerHttpRequest {
 			boolean release = true;
 			try {
 				ByteBuffer byteBuffer = pooledByteBuffer.getBuffer();
-
 				int read = this.channel.read(byteBuffer);
-				if (logger.isTraceEnabled()) {
-					logger.trace("Channel read returned " + read + (read != -1 ? " bytes" : ""));
+
+				if (rsReadLogger.isTraceEnabled()) {
+					rsReadLogger.trace(getLogPrefix() + "Read " + read + (read != -1 ? " bytes" : ""));
 				}
 
 				if (read > 0) {
@@ -187,13 +192,18 @@ class UndertowServerHttpRequest extends AbstractServerHttpRequest {
 					onAllDataRead();
 				}
 				return null;
-			} finally {
+			}
+			finally {
 				if (release && pooledByteBuffer.isOpen()) {
 					pooledByteBuffer.close();
 				}
 			}
 		}
 
+		@Override
+		protected void discardData() {
+			// Nothing to discard since we pass data buffers on immediately..
+		}
 	}
 
 	private static class UndertowDataBuffer implements PooledDataBuffer {
@@ -205,6 +215,11 @@ class UndertowServerHttpRequest extends AbstractServerHttpRequest {
 		public UndertowDataBuffer(DataBuffer dataBuffer, PooledByteBuffer pooledByteBuffer) {
 			this.dataBuffer = dataBuffer;
 			this.pooledByteBuffer = pooledByteBuffer;
+		}
+
+		@Override
+		public boolean isAllocated() {
+			return this.pooledByteBuffer.isOpen();
 		}
 
 		@Override

@@ -33,10 +33,10 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import org.springframework.core.ParameterizedTypeReference;
+import org.springframework.core.codec.Hints;
 import org.springframework.http.HttpCookie;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpRange;
-import org.springframework.http.HttpRequest;
 import org.springframework.http.MediaType;
 import org.springframework.http.codec.HttpMessageReader;
 import org.springframework.http.codec.multipart.Part;
@@ -63,7 +63,8 @@ class DefaultServerRequest implements ServerRequest {
 
 	private static final Function<UnsupportedMediaTypeException, UnsupportedMediaTypeStatusException> ERROR_MAPPER =
 			ex -> (ex.getContentType() != null ?
-					new UnsupportedMediaTypeStatusException(ex.getContentType(), ex.getSupportedMediaTypes()) :
+					new UnsupportedMediaTypeStatusException(
+							ex.getContentType(), ex.getSupportedMediaTypes(), ex.getBodyType()) :
 					new UnsupportedMediaTypeStatusException(ex.getMessage()));
 
 
@@ -93,7 +94,7 @@ class DefaultServerRequest implements ServerRequest {
 
 	@Override
 	public UriBuilder uriBuilder() {
-		return UriComponentsBuilder.fromHttpRequest(new ServerRequestAdapter());
+		return UriComponentsBuilder.fromUri(uri());
 	}
 
 	@Override
@@ -123,11 +124,16 @@ class DefaultServerRequest implements ServerRequest {
 
 	@Override
 	public <T> T body(BodyExtractor<T, ? super ServerHttpRequest> extractor) {
-		return body(extractor, Collections.emptyMap());
+		return bodyInternal(extractor, Hints.from(Hints.LOG_PREFIX_HINT, exchange().getLogPrefix()));
 	}
 
 	@Override
 	public <T> T body(BodyExtractor<T, ? super ServerHttpRequest> extractor, Map<String, Object> hints) {
+		hints = Hints.merge(hints, Hints.LOG_PREFIX_HINT, exchange().getLogPrefix());
+		return bodyInternal(extractor, hints);
+	}
+
+	private <T> T bodyInternal(BodyExtractor<T, ? super ServerHttpRequest> extractor, Map<String, Object> hints) {
 		return extractor.extract(request(),
 				new BodyExtractor.Context() {
 					@Override
@@ -216,7 +222,7 @@ class DefaultServerRequest implements ServerRequest {
 
 	@Override
 	public String toString() {
-		return String.format("%s %s", method(), path());
+		return String.format("HTTP %s %s", method(), path());
 	}
 
 
@@ -276,25 +282,6 @@ class DefaultServerRequest implements ServerRequest {
 		@Override
 		public String toString() {
 			return delegate().toString();
-		}
-	}
-
-
-	private final class ServerRequestAdapter implements HttpRequest {
-
-		@Override
-		public String getMethodValue() {
-			return methodName();
-		}
-
-		@Override
-		public URI getURI() {
-			return uri();
-		}
-
-		@Override
-		public HttpHeaders getHeaders() {
-			return request().getHeaders();
 		}
 	}
 

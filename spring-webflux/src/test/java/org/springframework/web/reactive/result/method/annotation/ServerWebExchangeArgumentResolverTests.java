@@ -52,7 +52,8 @@ public class ServerWebExchangeArgumentResolverTests {
 	private final ServerWebExchangeArgumentResolver resolver =
 			new ServerWebExchangeArgumentResolver(ReactiveAdapterRegistry.getSharedInstance());
 
-	private final MockServerWebExchange exchange = MockServerWebExchange.from(MockServerHttpRequest.get("/path"));
+	private final MockServerWebExchange exchange = MockServerWebExchange.from(
+			MockServerHttpRequest.get("http://example.org:9999/path?q=foo"));
 
 	private ResolvableMethod testMethod = ResolvableMethod.on(getClass()).named("handle").build();
 
@@ -104,7 +105,7 @@ public class ServerWebExchangeArgumentResolverTests {
 
 		assertNotNull(value);
 		assertEquals(UriComponentsBuilder.class, value.getClass());
-		assertEquals("/path/next", ((UriComponentsBuilder) value).path("/next").build().toUriString());
+		assertEquals("http://example.org:9999/next", ((UriComponentsBuilder) value).path("/next").toUriString());
 	}
 
 
