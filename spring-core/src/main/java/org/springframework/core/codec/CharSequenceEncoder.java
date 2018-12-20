@@ -28,6 +28,7 @@ import reactor.core.publisher.Flux;
 import org.springframework.core.ResolvableType;
 import org.springframework.core.io.buffer.DataBuffer;
 import org.springframework.core.io.buffer.DataBufferFactory;
+import org.springframework.core.log.LogFormatUtils;
 import org.springframework.lang.Nullable;
 import org.springframework.util.MimeType;
 import org.springframework.util.MimeTypeUtils;
@@ -41,8 +42,11 @@ import org.springframework.util.MimeTypeUtils;
  * @since 5.0
  * @see StringDecoder
  */
-public class CharSequenceEncoder extends AbstractEncoder<CharSequence> {
+public final class CharSequenceEncoder extends AbstractEncoder<CharSequence> {
 
+	/**
+	 * The default charset used by the encoder.
+	 */
 	public static final Charset DEFAULT_CHARSET = StandardCharsets.UTF_8;
 
 
@@ -53,7 +57,7 @@ public class CharSequenceEncoder extends AbstractEncoder<CharSequence> {
 
 	@Override
 	public boolean canEncode(ResolvableType elementType, @Nullable MimeType mimeType) {
-		Class<?> clazz = elementType.resolve(Object.class);
+		Class<?> clazz = elementType.toClass();
 		return super.canEncode(elementType, mimeType) && CharSequence.class.isAssignableFrom(clazz);
 	}
 
@@ -65,6 +69,12 @@ public class CharSequenceEncoder extends AbstractEncoder<CharSequence> {
 		Charset charset = getCharset(mimeType);
 
 		return Flux.from(inputStream).map(charSequence -> {
+			if (!Hints.isLoggingSuppressed(hints)) {
+				LogFormatUtils.traceDebug(logger, traceOn -> {
+					String formatted = LogFormatUtils.formatValue(charSequence, !traceOn);
+					return Hints.getLogPrefix(hints) + "Writing " + formatted;
+				});
+			}
 			CharBuffer charBuffer = CharBuffer.wrap(charSequence);
 			ByteBuffer byteBuffer = charset.encode(charBuffer);
 			return bufferFactory.wrap(byteBuffer);
@@ -72,20 +82,14 @@ public class CharSequenceEncoder extends AbstractEncoder<CharSequence> {
 	}
 
 	private Charset getCharset(@Nullable MimeType mimeType) {
-		Charset charset;
 		if (mimeType != null && mimeType.getCharset() != null) {
-			charset = mimeType.getCharset();
+			return mimeType.getCharset();
 		}
 		else {
-			 charset = DEFAULT_CHARSET;
+			return DEFAULT_CHARSET;
 		}
-		return charset;
 	}
 
-	@Override
-	public Long getContentLength(CharSequence data, @Nullable MimeType mimeType) {
-		return (long) data.toString().getBytes(getCharset(mimeType)).length;
-	}
 
 	/**
 	 * Create a {@code CharSequenceEncoder} that supports only "text/plain".

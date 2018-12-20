@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.springframework.mock.web.server;
 
 import reactor.core.publisher.Mono;
@@ -37,7 +38,6 @@ import org.springframework.web.server.session.WebSessionManager;
  * @since 5.0
  */
 public final class MockServerWebExchange extends DefaultServerWebExchange {
-
 
 	private MockServerWebExchange(MockServerHttpRequest request, WebSessionManager sessionManager) {
 		super(request, new MockServerHttpResponse(), sessionManager,
@@ -101,16 +101,16 @@ public final class MockServerWebExchange extends DefaultServerWebExchange {
 		@Nullable
 		private WebSessionManager sessionManager;
 
-
 		public Builder(MockServerHttpRequest request) {
 			this.request = request;
 		}
 
-
 		/**
 		 * Set the session to use for the exchange.
-		 * <p>This is mutually exclusive with {@link #sessionManager(WebSessionManager)}.
+		 * <p>This method is mutually exclusive with
+		 * {@link #sessionManager(WebSessionManager)}.
 		 * @param session the session to use
+		 * @see MockWebSession
 		 */
 		public Builder session(WebSession session) {
 			this.sessionManager = exchange -> Mono.just(session);
